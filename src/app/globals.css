@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4ede6;
+  --foreground: #1f2428;
+  --accent: #7fd1b9;
+  --primary: #5c1f2d;
+  --muted: #e6e6ea;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-medium text-white transition-colors;
+  background: var(--primary);
+}
+
+.btn-primary:hover {
+  background: #4a1824;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-full border px-5 py-3 text-sm font-medium transition-colors;
+  border-color: #1f2428;
+  color: #1f2428;
+}
+
+.btn-ghost:hover {
+  background: #1f2428;
+  color: #f4ede6;
+}
+
+.card {
+  @apply rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm backdrop-blur;
 }
