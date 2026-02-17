@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ContactManager } from './ContactManager';
 
 interface Testimonial {
   id: string;
@@ -23,6 +24,16 @@ interface Portfolio {
   sort_order: number;
 }
 
+interface ContactSubmission {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  service_interest: string;
+  message: string;
+  created_at: string;
+}
+
 interface BlogPost {
   id: string;
   title: string;
@@ -38,6 +49,7 @@ export default function AdminDashboard() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -71,9 +83,15 @@ export default function AdminDashboard() {
         .select('*')
         .order('created_at', { ascending: false });
 
+      const { data: contactData } = await supabase
+        .from('contact_submissions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       setTestimonials(testimonialsData || []);
       setPortfolio(portfolioData || []);
       setBlogPosts(blogData || []);
+      setContactSubmissions(contactData || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -131,7 +149,7 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
-            {['testimonials', 'portfolio', 'blog'].map((tab) => (
+            {['testimonials', 'portfolio', 'blog', 'contact'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -141,7 +159,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                {tab}
+                {tab === 'contact' ? 'Contact Submissions' : tab}
               </button>
             ))}
           </nav>
@@ -151,6 +169,7 @@ export default function AdminDashboard() {
           {activeTab === 'testimonials' && <TestimonialsManager testimonials={testimonials} onUpdate={fetchData} />}
           {activeTab === 'portfolio' && <PortfolioManager portfolio={portfolio} onUpdate={fetchData} />}
           {activeTab === 'blog' && <BlogManager blogPosts={blogPosts} onUpdate={fetchData} />}
+          {activeTab === 'contact' && <ContactManager submissions={contactSubmissions} />}
         </div>
       </div>
     </div>
