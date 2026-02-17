@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+
 const navLinks = [
   { href: "#home", label: "Home" },
   { href: "#about", label: "About Us" },
@@ -5,12 +10,38 @@ const navLinks = [
   { href: "#portfolio", label: "Our Portfolio" },
   { href: "#careers", label: "Careers" },
   { href: "#testimonials", label: "Testimonials" },
+  { href: "#blog", label: "Blog" },
   { href: "#contact", label: "Contact Us" },
 ];
+
+interface Testimonial {
+  id: string;
+  content: string;
+  author_name: string;
+  author_title: string;
+  rating: number;
+}
+
+interface Portfolio {
+  id: string;
+  title: string;
+  type: string;
+  accent_color: string;
+  external_link?: string;
+}
+
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  published_at: string;
+}
 
 const services = [
   {
     title: "Corporate Research",
+    icon: "📊",
     items: [
       "Market research",
       "Feasibility studies",
@@ -20,6 +51,7 @@ const services = [
   },
   {
     title: "Academic Research Support",
+    icon: "🎓",
     items: [
       "Topic selection",
       "Chapter 1–5 writing",
@@ -29,70 +61,106 @@ const services = [
   },
   {
     title: "Data Analysis Services",
+    icon: "📈",
     items: ["Quantitative analysis", "Qualitative analysis", "Data reporting"],
   },
   {
     title: "Editing & Formatting",
+    icon: "✏️",
     items: ["Structure & clarity", "Referencing", "Formatting standards"],
   },
   {
     title: "Research Training & Mentorship",
-    items: ["Guided practice", "Tooling & methods", "Feedback loops"],
+    icon: "👥",
+    items: ["Guided practice", "Tooling & methods", "Feedback loops", "Mentorship"],
   },
-];
-
-const portfolio = [
-  {
-    title: "Uptake of voluntary MBAO pension savings by informal sector traders",
-    type: "Report",
-    accent: "#7fd1b9",
-  },
-  {
-    title: "Development Finance Institutions & MSME Growth",
-    type: "Policy Brief",
-    accent: "#5c1f2d",
-  },
-  {
-    title: "Instructional supervision practices & teachers’ job performance",
-    type: "Academic",
-    accent: "#4a1824",
-  },
-  {
-    title: "Parental involvement & learners' behavior",
-    type: "Study",
-    accent: "#7fd1b9",
-  },
-  {
-    title: "Organizational culture & teachers’ job performance",
-    type: "Study",
-    accent: "#5c1f2d",
-  },
-  {
-    title: "Competitive strategies and beverage firms performance",
-    type: "Corporate",
-    accent: "#4a1824",
-  },
-  {
-    title: "Assessing Cambridge Analytica – Facebook Data Scandal",
-    type: "Case Review",
-    accent: "#7fd1b9",
-  },
-  {
-    title:
-      "Evaluating financial performance of Limuru Tea Plc (2021–2023)",
-    type: "Financial",
-    accent: "#5c1f2d",
-  },
-];
-
-const testimonials = [
-  "“Very dependable. Helped me with data analysis.”",
-  "“Professional and high-quality writing.”",
-  "“Loved the flow of my literature review.”",
-  "“Best research guidance I’ve ever received.”",
 ];
 
 export default function Home() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [portfolio, setPortfolio] = useState<Portfolio[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+    // Check if admin is logged in
+    const adminAuth = localStorage.getItem('adminAuthenticated');
+    setIsAdmin(adminAuth === 'true');
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [testimonialsRes, portfolioRes, blogRes] = await Promise.all([
+        supabase.from('testimonials').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+        supabase.from('portfolio').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+        supabase.from('blog_posts').select('id, title, slug, excerpt, published_at').eq('is_published', true).order('published_at', { ascending: false }).limit(3)
+      ]);
+
+      if (testimonialsRes.error) throw testimonialsRes.error;
+      if (portfolioRes.error) throw portfolioRes.error;
+      if (blogRes.error) throw blogRes.error;
+
+      setTestimonials(testimonialsRes.data || []);
+      setPortfolio(portfolioRes.data || []);
+      setBlogPosts(blogRes.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Fallback to static data if Supabase fails
+      setTestimonials([
+        { id: '1', content: "Very dependable. Helped me with data analysis.", author_name: "John M.", author_title: "Graduate Student", rating: 5 },
+        { id: '2', content: "Professional and high-quality writing.", author_name: "Sarah K.", author_title: "Researcher", rating: 5 },
+        { id: '3', content: "Loved the flow of my literature review.", author_name: "Michael T.", author_title: "Postgraduate", rating: 5 },
+        { id: '4', content: "Best research guidance I've ever received.", author_name: "Emily R.", author_title: "PhD Candidate", rating: 5 },
+      ]);
+      setPortfolio([
+        { id: '1', title: "Uptake of voluntary MBAO pension savings by informal sector traders", type: "Report", accent_color: "#7fd1b9" },
+        { id: '2', title: "Development Finance Institutions & MSME Growth", type: "Policy Brief", accent_color: "#5c1f2d" },
+        { id: '3', title: "Instructional supervision practices & teachers' job performance", type: "Academic", accent_color: "#4a1824" },
+        { id: '4', title: "Parental involvement & learners' behavior", type: "Study", accent_color: "#7fd1b9" },
+        { id: '5', title: "Organizational culture & teachers' job performance", type: "Study", accent_color: "#5c1f2d" },
+        { id: '6', title: "Competitive strategies and beverage firms performance", type: "Corporate", accent_color: "#4a1824" },
+        { id: '7', title: "Assessing Cambridge Analytica – Facebook Data Scandal", type: "Case Review", accent_color: "#7fd1b9" },
+        { id: '8', title: "Evaluating financial performance of Limuru Tea Plc (2021–2023)", type: "Financial", accent_color: "#5c1f2d" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const { error } = await supabase.from('contact_submissions').insert({
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        email: formData.get('email'),
+        service_interest: formData.get('service'),
+        message: formData.get('message'),
+      });
+
+      if (error) throw error;
+
+      alert('Message sent successfully! We will get back to you soon.');
+      e.currentTarget.reset();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Failed to send message. Please try again or contact us directly.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f4ede6] flex items-center justify-center">
+        <div className="text-[#1f2428]">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f4ede6] text-[#1f2428]">
       <header className="sticky top-0 z-40 border-b border-black/5 bg-[#f4ede6]/90 backdrop-blur">
@@ -108,6 +176,8 @@ export default function Home() {
               </div>
             </div>
           </div>
+          
+          {/* Desktop Navigation */}
           <nav className="hidden gap-5 text-sm font-medium md:flex">
             {navLinks.map((link) => (
               <a
@@ -119,10 +189,98 @@ export default function Home() {
               </a>
             ))}
           </nav>
+          
           <a href="#contact" className="btn-primary hidden text-sm md:inline-flex">
             Talk to Us
           </a>
+
+          {isAdmin && (
+          <a 
+            href="/admin" 
+            className="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#5c1f2d] border border-[#5c1f2d]/20 rounded-full hover:bg-[#5c1f2d]/10 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Admin Dashboard
+          </a>
+        )}
+
+        {!isAdmin && (
+          <a 
+            href="/admin/login" 
+            className="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#4a1824] border border-[#4a1824]/20 rounded-full hover:bg-[#4a1824]/10 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Admin
+          </a>
+        )}
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex flex-col gap-1.5 p-2 md:hidden"
+            aria-label="Toggle menu"
+          >
+            <span
+              className={`h-0.5 w-6 bg-[#1f2428] transition-all duration-300 ${
+                isMenuOpen ? 'rotate-45 translate-y-2' : ''
+              }`}
+            />
+            <span
+              className={`h-0.5 w-6 bg-[#1f2428] transition-all duration-300 ${
+                isMenuOpen ? 'opacity-0' : ''
+              }`}
+            />
+            <span
+              className={`h-0.5 w-6 bg-[#1f2428] transition-all duration-300 ${
+                isMenuOpen ? '-rotate-45 -translate-y-2' : ''
+              }`}
+            />
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <nav className="flex flex-col border-t border-black/5 bg-[#f4ede6]/95 backdrop-blur">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="px-6 py-3 text-sm font-medium transition-colors hover:bg-black/5"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <div className="border-t border-black/5 px-6 py-3">
+                <a
+                  href="#contact"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="btn-primary w-full justify-center text-sm mb-2"
+                >
+                  Talk to Us
+                </a>
+                <a
+                  href="/admin/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full justify-center text-sm px-4 py-2 font-medium text-[#4a1824] border border-[#4a1824]/20 rounded-full hover:bg-[#4a1824]/10 transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Admin
+                </a>
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pb-20 pt-10">
@@ -252,15 +410,30 @@ export default function Home() {
             </a>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => (
-              <div key={service.title} className="card flex flex-col gap-3">
-                <h3 className="font-serif text-xl text-[#1f2428]">
-                  {service.title}
-                </h3>
+            {services.map((service, index) => (
+              <div 
+                key={service.title} 
+                className="card flex flex-col gap-3 transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:-translate-y-1"
+                style={{
+                  animationDelay: `${index * 100}ms`
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl animate-pulse">{service.icon}</div>
+                  <h3 className="font-serif text-xl text-[#1f2428]">
+                    {service.title}
+                  </h3>
+                </div>
                 <ul className="space-y-2 text-[#2f3438]">
-                  {service.items.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-1 h-2 w-2 rounded-full bg-[#5c1f2d]" />
+                  {service.items.map((item, itemIndex) => (
+                    <li 
+                      key={item} 
+                      className="flex items-start gap-2 transform transition-all duration-300 hover:translate-x-1"
+                      style={{
+                        animationDelay: `${index * 100 + itemIndex * 50}ms`
+                      }}
+                    >
+                      <span className="mt-1 h-2 w-2 rounded-full bg-[#5c1f2d] animate-pulse" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -282,29 +455,92 @@ export default function Home() {
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {portfolio.map((item) => (
+            {portfolio.map((item, index) => (
               <div
-                key={item.title}
-                className="card flex gap-4 bg-white/90"
+                key={item.id}
+                className="card flex gap-4 bg-white/90 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1"
+                style={{
+                  animationDelay: `${index * 150}ms`
+                }}
               >
                 <div
-                  className="h-20 w-16 flex-shrink-0 overflow-hidden rounded-xl shadow-sm"
+                  className="h-20 w-16 flex-shrink-0 overflow-hidden rounded-xl shadow-sm transform transition-transform duration-300 hover:scale-110"
                   style={{
-                    background: `linear-gradient(135deg, ${item.accent} 0%, #f4ede6 100%)`,
+                    background: `linear-gradient(135deg, ${item.accent_color} 0%, #f4ede6 100%)`,
                   }}
                 >
                   <div className="flex h-full items-end justify-center bg-black/10 text-[10px] font-semibold uppercase tracking-wide text-white/90">
                     {item.type}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[#1f2428] font-medium">{item.title}</p>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[#1f2428] font-medium transform transition-all duration-300 hover:text-[#5c1f2d] leading-tight">{item.title}</p>
+                    {item.external_link && (
+                      <a
+                        href={item.external_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#5c1f2d] hover:text-[#4a1824] transform transition-all duration-300 hover:scale-110 flex-shrink-0"
+                        title="View external work"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
                   <p className="text-xs text-[#4a1824]">Research profile</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        {/* Blog Section */}
+        {blogPosts.length > 0 && (
+          <section id="blog" className="mt-16 space-y-8 scroll-mt-28">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a1824]">
+                  Blog
+                </p>
+                <h2 className="font-serif text-3xl text-[#1f2428]">
+                  Latest Insights
+                </h2>
+              </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+              {blogPosts.map((post, index) => (
+                <div 
+                  key={post.id} 
+                  className="card transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1"
+                  style={{
+                    animationDelay: `${index * 150}ms`
+                  }}
+                >
+                  <h3 className="font-serif text-xl text-[#1f2428] mb-3 transform transition-all duration-300 hover:text-[#5c1f2d]">
+                    {post.title}
+                  </h3>
+                  {post.excerpt && (
+                    <p className="text-[#2f3438] mb-4">{post.excerpt}</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#4a1824]">
+                      {new Date(post.published_at).toLocaleDateString()}
+                    </span>
+                    <a
+                      href={`/blog/${post.slug}`}
+                      className="text-sm text-[#5c1f2d] hover:underline transform transition-all duration-300 hover:scale-110"
+                    >
+                      Read More
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section
           id="careers"
@@ -357,10 +593,26 @@ export default function Home() {
             </a>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
-            {testimonials.map((quote) => (
-              <div key={quote} className="card bg-white">
-                <div className="text-lg">⭐ ⭐ ⭐ ⭐ ⭐</div>
-                <p className="mt-3 text-[#2f3438]">{quote}</p>
+            {testimonials.map((testimonial, index) => (
+              <div 
+                key={testimonial.id} 
+                className="card bg-white transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1"
+                style={{
+                  animationDelay: `${index * 200}ms`
+                }}
+              >
+                <div className="text-lg animate-pulse">⭐ ⭐ ⭐ ⭐ ⭐</div>
+                <p className="mt-3 text-[#2f3438]">{testimonial.content}</p>
+                {(testimonial.author_name || testimonial.author_title) && (
+                  <div className="mt-4 text-sm text-[#4a1824] transform transition-all duration-300 hover:translate-x-1">
+                    {testimonial.author_name && (
+                      <div className="font-medium">{testimonial.author_name}</div>
+                    )}
+                    {testimonial.author_title && (
+                      <div>{testimonial.author_title}</div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -395,7 +647,7 @@ export default function Home() {
               We respond quickly with clear next steps.
             </p>
           </div>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleContactSubmit}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#1f2428]">
@@ -403,7 +655,9 @@ export default function Home() {
                 </label>
                 <input
                   type="text"
+                  name="name"
                   placeholder="Your full name"
+                  required
                   className="w-full rounded-xl border border-[#d7d1cc] bg-white/80 px-4 py-3 text-sm text-[#1f2428] outline-none transition focus:border-[#5c1f2d]"
                 />
               </div>
@@ -413,6 +667,7 @@ export default function Home() {
                 </label>
                 <input
                   type="tel"
+                  name="phone"
                   placeholder="+254..."
                   className="w-full rounded-xl border border-[#d7d1cc] bg-white/80 px-4 py-3 text-sm text-[#1f2428] outline-none transition focus:border-[#5c1f2d]"
                 />
@@ -423,7 +678,9 @@ export default function Home() {
                 </label>
                 <input
                   type="email"
+                  name="email"
                   placeholder="you@example.com"
+                  required
                   className="w-full rounded-xl border border-[#d7d1cc] bg-white/80 px-4 py-3 text-sm text-[#1f2428] outline-none transition focus:border-[#5c1f2d]"
                 />
               </div>
@@ -431,7 +688,10 @@ export default function Home() {
                 <label className="text-sm font-medium text-[#1f2428]">
                   Service Interested In
                 </label>
-                <select className="w-full rounded-xl border border-[#d7d1cc] bg-white/80 px-4 py-3 text-sm text-[#1f2428] outline-none transition focus:border-[#5c1f2d]">
+                <select 
+                  name="service"
+                  className="w-full rounded-xl border border-[#d7d1cc] bg-white/80 px-4 py-3 text-sm text-[#1f2428] outline-none transition focus:border-[#5c1f2d]"
+                >
                   <option>Corporate Research</option>
                   <option>Academic Research</option>
                   <option>Data Analysis</option>
@@ -446,12 +706,13 @@ export default function Home() {
                 Other details
               </label>
               <textarea
+                name="message"
                 rows={4}
                 placeholder="Tell us about your project or request..."
                 className="w-full rounded-xl border border-[#d7d1cc] bg-white/80 px-4 py-3 text-sm text-[#1f2428] outline-none transition focus:border-[#5c1f2d]"
               />
             </div>
-            <button type="button" className="btn-primary">
+            <button type="submit" className="btn-primary">
               Send Message
             </button>
           </form>
